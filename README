@@ -1,4 +1,5 @@
-*Modular Nautobot docker compose*
+============
+Modular Nautobot docker compose
 
 This repo is based on the oringinal nautobot repo found here:
 https://github.com/nautobot/nautobot-docker-compose
