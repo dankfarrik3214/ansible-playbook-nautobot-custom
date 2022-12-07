@@ -1,0 +1,111 @@
+# To run this playbook: ansible-playbook ansible_nautobot_compose_custom_installer.yml  -i hosts.yml
+---
+  - name: Playbook
+    hosts: all
+    become: yes
+
+    # Install docker on server
+
+    roles:
+    - bsmeding_docker
+
+    tasks:
+
+    # Cloning repo's for nautobot build
+
+      - name: Clone the nautobot github repository
+        git:
+          repo: https://github.com/nautobot/nautobot-docker-compose.git
+          dest: /bin/nautobot-docker-compose
+          clone: yes
+          update: yes
+
+      - name: Remove default yml file
+        ansible.builtin.file:
+          path: /bin/nautobot-docker-compose/docker-compose.yml
+          state: absent
+
+      - name: Remove default env file
+        ansible.builtin.file:
+          path: /bin/nautobot-docker-compose/local.env.example
+          state: absent
+
+      - name: Clone the nautobot objects github repository
+        git:
+          repo: https://github.com/dankfarrik3214/nautobot-compose-custom.git
+          dest: /bin/nautobot-compose-modular-replacement-custom
+          clone: yes
+          update: yes
+
+      # Replace default files with new custom files    
+
+      - name: copying Dockerfile with playbook
+        become: true 
+        copy:
+          remote_src: true
+          src: /bin/nautobot-compose-modular-replacement-custom/Dockerfile
+          dest: /bin/nautobot-docker-compose/Dockerfile
+
+      - name: copying compose file with playbook
+        become: true 
+        copy:
+          remote_src: true
+          src: /bin/nautobot-compose-modular-replacement-custom/docker-compose.yml
+          dest: /bin/nautobot-docker-compose/docker-compose.yml
+
+      - name: copying new nautobot config file
+        become: true 
+        copy:
+          remote_src: true
+          src: /bin/nautobot-compose-modular-replacement-custom/nautobot_config.py
+          dest: /bin/nautobot-docker-compose/nautobot_config.py
+
+      - name: copying local env file with playbook
+        become: true 
+        copy:
+          remote_src: true
+          src: /bin/nautobot-compose-modular-replacement-custom/local.env
+          dest: /bin/nautobot-docker-compose/local.env
+
+      - name: Remove the replacement folder
+        ansible.builtin.file:
+          path: /bin/nautobot-compose-modular-replacement-custom/
+          state: absent
+
+    ## Building custom Nautobot image
+
+      - name: Get nautobot image version
+        become: True
+        shell: "cat /bin/nautobot-docker-compose/local.env | grep NAUTOBOT_IMAGE | cut -c 16,17,18,19,20"
+        register: NAUTOBOT_IMAGE
+        
+  
+      - name: Get python version
+        become: True
+        shell: "cat /bin/nautobot-docker-compose/local.env | grep PYTHON_VER= | cut -c 12,13,14"
+        register: PYTHON_VER
+
+      - name: Build Nautobot with custom plugins
+        community.docker.docker_image:
+          name: networktocode/nautobot:custom
+          build:
+            path: /bin/nautobot-docker-compose
+            nocache: true
+            args:
+              NAUTOBOT_IMAGE: '{{ NAUTOBOT_IMAGE.stdout }}'
+              PYTHON_VER: '{{ PYTHON_VER.stdout }}'        
+          source: build
+          force_source: yes
+
+      # run the containers!
+      
+      - name: Run nautobot container
+        become: True
+        shell:
+          cmd: "docker-compose -f docker-compose.yml --env-file 'local.env' up -d"
+          chdir: /bin/nautobot-docker-compose/
+
+
+
+
+            

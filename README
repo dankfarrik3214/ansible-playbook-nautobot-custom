@@ -1,0 +1,57 @@
+===============================
+Modular Nautobot docker compose
+
+This repo is based on the oringinal nautobot repo found here:
+https://github.com/nautobot/nautobot-docker-compose
+
+This repo will install custom settings including:
+- Plugins
+- Custom nautobot file.
+
+The ansible playbook will fetch these custom settings from the following repo:
+https://github.com/dankfarrik3214/nautobot-compose-custom
+
+
+
+============
+Plaform
+
+This was tested on a Ansible server with the combination of a ubuntu server 22.*
+
+============
+Settings
+
+You can use your default ansible hosts settings. Or you can use host.yml in these repo to test it on a server.
+Please check these settings
+
+
+============
+Installation
+
+First step:
+
+Install required python packages from requirements.txt
+
+```
+Install pip requirementes on ansible host
+`pip install -r requirements.txt` # NOTE .txt for Python install
+```
+
+Second step:
+
+Install roles via the docker requirements.yml file:
+
+roles:
+- name: bsmeding.docker
+
+```
+Install the required roles:
+`ansible-galaxy install -r requirements.yml`
+```
+
+
+Run playbook to install Docker and the custom nautobot
+
+```
+ansible-playbook ansible_nautobot_compose_custom_installer.yml  -i hosts.yml
+```

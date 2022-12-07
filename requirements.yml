@@ -1,0 +1,4 @@
+roles:
+- name: bsmeding_docker
+  src: git+https://github.com/bsmeding/ansible_role_docker
+- src: git+https://github.com/bsmeding/ansible_role_nautobot_docker
